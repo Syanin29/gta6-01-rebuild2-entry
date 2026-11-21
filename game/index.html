@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CORAL PALMS: Neon Tide</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #12081f; font-family: "Trebuchet MS", Verdana, sans-serif; }
+  #game-canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+  #hud { position: fixed; inset: 0; pointer-events: none; color: #fff; }
+  #hud-top { position: absolute; top: 10px; left: 12px; right: 12px; display: flex; justify-content: space-between; align-items: flex-start; }
+  .hud-box { background: rgba(10, 6, 24, 0.55); border: 1px solid rgba(255, 190, 120, 0.35); border-radius: 8px; padding: 6px 10px; font-size: 14px; line-height: 1.45; text-shadow: 0 1px 2px #000; }
+  #hud-cash { color: #8dff9a; font-weight: bold; font-size: 17px; }
+  #hud-wanted { color: #ffd34d; font-size: 17px; letter-spacing: 2px; }
+  #hud-healthbar { width: 150px; height: 9px; background: #3a1020; border-radius: 4px; overflow: hidden; margin-top: 3px; }
+  #hud-healthfill { height: 100%; background: linear-gradient(90deg, #ff5f6d, #ffc371); width: 100%; }
+  #hud-mission { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); max-width: 46%; text-align: center; }
+  #hud-mission-title { color: #ffb36b; font-weight: bold; font-size: 15px; }
+  #hud-message { position: absolute; bottom: 128px; left: 50%; transform: translateX(-50%); font-size: 17px; font-weight: bold; color: #ffe9c4; text-shadow: 0 2px 4px #000; text-align: center; }
+  #hud-speed { position: absolute; right: 14px; bottom: 14px; font-size: 20px; font-weight: bold; }
+  #hud-weapon { position: absolute; right: 14px; bottom: 46px; font-size: 14px; }
+  #minimap { position: absolute; left: 12px; bottom: 12px; width: 150px; height: 150px; border-radius: 50%; border: 2px solid rgba(255,190,120,0.5); background: rgba(8,10,20,0.75); }
+  #title-screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(ellipse at 50% 65%, rgba(255,120,60,0.25), rgba(10,4,24,0.88) 70%); color: #fff; text-align: center; z-index: 5; }
+  #title-screen h1 { font-size: 58px; margin: 0; letter-spacing: 3px; color: #ffb36b; text-shadow: 0 0 22px rgba(255,110,60,0.8), 0 3px 0 #7a2b12; font-style: italic; }
+  #title-screen h2 { font-size: 22px; margin: 2px 0 14px; letter-spacing: 8px; color: #7de8ff; text-shadow: 0 0 14px rgba(80,200,255,0.8); }
+  #title-screen p { max-width: 560px; font-size: 15px; line-height: 1.55; color: #f3e7d3; }
+  #title-screen .keys { font-size: 13px; color: #cbb8ff; line-height: 1.7; }
+  #title-screen button { pointer-events: auto; margin-top: 16px; font-size: 19px; padding: 10px 34px; border: 0; border-radius: 8px; background: linear-gradient(180deg, #ff9a4d, #e85d2a); color: #fff; font-weight: bold; cursor: pointer; box-shadow: 0 4px 16px rgba(232,93,42,0.5); }
+  #end-screen { position: fixed; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; background: rgba(8,2,10,0.72); color: #fff; z-index: 6; text-align: center; }
+  #end-screen h1 { font-size: 52px; letter-spacing: 6px; margin: 0; }
+  #end-screen p { font-size: 16px; color: #f3e7d3; }
+  #end-screen button { pointer-events: auto; margin-top: 14px; font-size: 17px; padding: 9px 30px; border: 0; border-radius: 8px; background: #2a9d8f; color: #fff; font-weight: bold; cursor: pointer; }
+</style>
+<script type="importmap">
+{ "imports": { "three": "./vendor/three/three.module.min.js" } }
+</script>
+</head>
+<body>
+<canvas id="game-canvas"></canvas>
+<div id="hud">
+  <div id="hud-top">
+    <div class="hud-box">
+      <div id="hud-cash">$0</div>
+      <div id="hud-clock">18:42 · Coral Palms</div>
+      <div id="hud-healthbar"><div id="hud-healthfill"></div></div>
+    </div>
+    <div class="hud-box"><span id="hud-wanted"></span></div>
+  </div>
+  <div id="hud-mission" class="hud-box">
+    <div id="hud-mission-title"></div>
+    <div id="hud-mission-text"></div>
+  </div>
+  <div id="hud-message"></div>
+  <canvas id="minimap" width="150" height="150"></canvas>
+  <div id="hud-weapon" class="hud-box">Fists</div>
+  <div id="hud-speed" class="hud-box">0 km/h</div>
+</div>
+<div id="title-screen">
+  <h1>CORAL PALMS</h1>
+  <h2>NEON TIDE</h2>
+  <p>Reno Vale just got out of the county lockup with forty bucks and a debt to Mama Sol,
+     the fixer who runs the docks. Run her jobs across the island city, shake the Coral Palms
+     PD, and buy your way out before the tide comes in.</p>
+  <div class="keys">
+    WASD move / drive &nbsp;·&nbsp; Shift run &nbsp;·&nbsp; Space brake / jump<br>
+    F enter / exit car &nbsp;·&nbsp; Mouse aim &nbsp;·&nbsp; Click punch / shoot &nbsp;·&nbsp; M save &nbsp;·&nbsp; L load
+  </div>
+  <button id="btn-start">START THE TIDE</button>
+</div>
+<div id="end-screen">
+  <h1 id="end-title">WASTED</h1>
+  <p id="end-text"></p>
+  <button id="btn-restart">BACK ON THE STREET</button>
+</div>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
